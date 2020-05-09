@@ -1,0 +1,92 @@
+version: '3'
+services:
+    nginx: 
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./nginx/www:/var/www
+            - ./nginx/conf/:/etc/nginx/conf.d/  
+        networks:
+            - app-network
+    npm:
+        build: ./node
+        volumes:
+            - ./nginx/www:/var/www
+        networks:
+            - app-network
+    #redis
+    redis_1:
+        image: redis:latest
+        networks:
+            - app-network
+    redis_2:
+        image: redis:latest
+        networks:
+            - app-network
+    redis_3:
+        image: redis:latest
+        networks:
+            - app-network
+    redis_4:
+        image: redis:latest
+        networks:
+            - app-network 
+    redis_5:
+        image: redis:latest
+        networks:
+            - app-network 
+#mysql base        
+    mysql:
+        build:
+            context: ./mysql
+            args:
+            - MYSQL_VERSION=${MYSQL_VERSION}
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        volumes:
+            # - ./mysql/data:/var/lib/mysql
+            - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+        ports:
+            - "${MYSQL_PORT}:3306"
+        networks:
+            - app-network
+    #go app            
+    go_1:
+        build: ./go
+        environment:
+            - REDIS_SERVER=redis_1
+        networks:
+            - app-network
+    go_2:
+        build: ./go
+        environment:
+            - REDIS_SERVER=redis_2
+        networks:
+            - app-network
+    go_3:
+        build: ./go
+        environment:
+            - REDIS_SERVER=redis_3
+        networks:
+            - app-network
+    go_4:
+        build: ./go
+        environment:
+            - REDIS_SERVER=redis_4
+        networks:
+            - app-network
+    go_5:
+        build: ./go
+        environment:
+            - REDIS_SERVER=redis_5
+        networks:
+            - app-network                         
+networks:
+    app-network:
+        driver: bridge
